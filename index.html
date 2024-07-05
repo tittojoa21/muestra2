@@ -1,83 +1,118 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Subir y Descargar Imágenes</title>
-    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
-    <link href="styles.css" rel="stylesheet">
+    <title>Carga y Descarga de Imágenes</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: #f4f4f9;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .container {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            max-width: 500px;
+            width: 100%;
+            text-align: center;
+        }
+        .container h1 {
+            margin-top: 0;
+            color: #333;
+        }
+        .container input, .container button {
+            margin-top: 10px;
+            width: 100%;
+            padding: 10px;
+            font-size: 16px;
+        }
+        .container button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .container button:hover {
+            background-color: #0056b3;
+        }
+        #gallery {
+            margin-top: 20px;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        #gallery img {
+            max-width: 100%;
+            margin: 10px;
+            border-radius: 4px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+    </style>
 </head>
 <body>
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-        <a class="navbar-brand" href="#">Muestra</a>
-    </nav>
-    <div class="container mt-4">
-        <h2>Subir Imagen</h2>
-        <form id="uploadForm" enctype="multipart/form-data" class="mb-3">
-            <div class="form-group">
-                <input type="file" class="form-control-file" id="imageUpload" accept="image/*" multiple />
-            </div>
-            <button type="button" class="btn btn-primary" onclick="uploadImages()">Subir</button>
-        </form>
-        <div id="imagePreview" class="mt-4"></div>
-        <h2>Descargar Imagen</h2>
-        <div id="imageList" class="row"></div>
+    <div class="container">
+        <h1>Carga y Descarga de Imágenes</h1>
+        <input type="file" id="fileInput" multiple>
+        <button onclick="uploadImages()">Cargar Imágenes</button>
+        <div id="gallery"></div>
     </div>
 
     <script>
+        const serverUrl = 'https://your-server-url.com'; // Cambia esto a la URL de tu servidor
+
         function uploadImages() {
-            const fileInput = document.getElementById('imageUpload');
-            const files = fileInput.files;
-            const formData = new FormData();
-            for (const file of files) {
-                formData.append('images', file);
+            const files = document.getElementById('fileInput').files;
+            if (files.length === 0) {
+                alert('Por favor selecciona al menos una imagen.');
+                return;
             }
 
-            fetch('/upload', {
+            const formData = new FormData();
+            for (let i = 0; i < files.length; i++) {
+                formData.append('images', files[i]);
+            }
+
+            fetch(`${serverUrl}/upload`, {
                 method: 'POST',
                 body: formData
             })
             .then(response => response.json())
             .then(data => {
-                if (data.filePaths) {
-                    let previewHtml = '';
-                    data.filePaths.forEach(filePath => {
-                        previewHtml += `<img src="${filePath}" alt="Image" class="img-fluid"/>`;
-                    });
-                    document.getElementById('imagePreview').innerHTML = previewHtml;
-                    fetchImages();  // Refresh the list of images after upload
-                } else {
-                    alert('Error: ' + JSON.stringify(data));
-                }
+                alert('Imágenes cargadas exitosamente');
+                displayGallery();
             })
             .catch(error => {
-                console.error('Error:', error);
+                console.error('Error al cargar las imágenes:', error);
             });
         }
 
-        function fetchImages() {
-            fetch('/images')
+        function displayGallery() {
+            fetch(`${serverUrl}/images`)
             .then(response => response.json())
-            .then(data => {
-                let imageListHtml = '';
-                data.images.forEach(image => {
-                    imageListHtml += `<div class="col-md-3 mb-4">
-                        <div class="card">
-                            <img src="${image}" class="card-img-top" alt="Image"/>
-                            <div class="card-body text-center">
-                                <a href="${image}" download class="btn btn-primary">Descargar</a>
-                            </div>
-                        </div>
-                    </div>`;
+            .then(images => {
+                const gallery = document.getElementById('gallery');
+                gallery.innerHTML = '';
+                images.forEach(image => {
+                    const imgElement = document.createElement('img');
+                    imgElement.src = `${serverUrl}/images/${image}`;
+                    gallery.appendChild(imgElement);
                 });
-                document.getElementById('imageList').innerHTML = imageListHtml;
             })
             .catch(error => {
-                console.error('Error:', error);
+                console.error('Error al obtener las imágenes:', error);
             });
         }
 
-        window.onload = fetchImages;
+        window.onload = displayGallery;
     </script>
 </body>
 </html>
